@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Fashion Chatbot</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .chat-container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background-color: #3f68ef;
+      padding: 20px;
+      color: white;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    #chat-messages {
+      padding: 20px;
+      height: 500px;
+      overflow-y: auto;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .message {
+      margin-bottom: 20px;
+    }
+
+    .message.user {
+      text-align: right;
+    }
+
+    .message.bot {
+      text-align: left;
+    }
+
+    .message p {
+      display: inline-block;
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 70%;
+      line-height: 1.4;
+    }
+
+    .message.user p {
+      background-color: #dcf8c6;
+    }
+
+    .message.bot p {
+      background-color: #e6e6e6;
+    }
+
+    .product {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .product img {
+      width: 100px;
+      height: auto;
+      margin-right: 15px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .product-info {
+      font-size: 14px;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 15px;
+    }
+
+    #message {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #send {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    #send:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      Smart Fashion Assistant 
+    </div>
+    <div id="chat-messages"></div>
+    <div class="chat-input">
+      <input type="text" id="message" placeholder="Ask me for outfit suggestions..." />
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const messagesDiv = document.getElementById("chat-messages");
+    const input = document.getElementById("message");
+    const sendBtn = document.getElementById("send");
+
+    function addMessage(text, sender, productList = []) {
+      const div = document.createElement("div");
+      div.className = `message ${sender}`;
+      div.innerHTML = `<p>${text}</p>`;
+
+      if (sender === "bot" && productList.length > 0) {
+        productList.forEach(p => {
+          const productHTML = `
+            <div class="product">
+              <img src="${p.image}" alt="${p.name}" />
+              <div class="product-info">
+                <strong>${p.name}</strong><br>
+                ₹${p.price} | Size: ${p.size}<br>
+                Style: ${p.style}
+              </div>
+            </div>
+          `;
+          div.innerHTML += productHTML;
+        });
+      }
+
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    sendBtn.onclick = async () => {
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      addMessage(userText, "user");
+      input.value = "";
+
+      try {
+        const response = await fetch("http://localhost:5000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userText })
+        });
+
+        const data = await response.json();
+        addMessage(data.reply || "Sorry, something went wrong.", "bot", data.products || []);
+      } catch (err) {
+        console.error(err);
+        addMessage("Error connecting to server.", "bot");
+      }
+    };
+
+    input.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") sendBtn.click();
+    });
+  </script>
+</body>
+</html>
+
